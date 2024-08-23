@@ -26,9 +26,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class WooCommerce_Show_Attributes {
 
 	private static ?WooCommerce_Show_Attributes $instance;
-	private bool $show_weight;
-	private bool $show_dimensions;
-	private bool $span_option;
 	private bool $visible_in_cart;
 	private string $display_position_shop;
 
@@ -66,11 +63,9 @@ class WooCommerce_Show_Attributes {
 		$this->product_attributes = new Product_attributes();
 
 		add_action( 'woocommerce_single_product_summary', array( $this, 'display_product_attributes_on_product_page'), 25 );
-		add_filter( 'woocommerce_product_tabs', array( $this, 'additional_info_tab' ), 98 );
 		add_filter( 'woocommerce_cart_item_name', array( $this, 'show_attributes_on_cart'), 10, 3 );
 		add_filter( 'woocommerce_get_settings_products', 'add_settings', 10, 2 );
 		add_filter( 'woocommerce_get_sections_products', 'add_section' );
-		add_action( 'init', array( $this, 'if_show_atts_on_shop' ) );
 		add_action( 'woocommerce_grouped_product_list_before_price', array( $this, 'attributes_grouped_product_html' ) );
 
 		if ( $this->display_position_shop == 'above_price' ) {
@@ -143,54 +138,6 @@ class WooCommerce_Show_Attributes {
 
 		echo wp_kses_post( $attribute_html );
 	}
-
-
-	/**
-	 * The custom HTML for the Additional Information tab which now excludes our custom attributes.
-	 */
-	public function additional_info_tab_content(): void { ?>
-        <h2><?php _e( 'Additional Information', 'woocommerce-show-attributes' ); ?></h2>
-        <table class="shop_attributes">
-			<?php
-			global $product;
-			$attributes = $product->get_attributes();
-			$has_weight = $product->has_weight();
-			$has_dimensions = $product->has_dimensions();
-			$display_dimensions = apply_filters( 'wc_product_enable_dimensions_display', $has_weight || $has_dimensions );
-
-			if ( $this->show_weight && $display_dimensions && $has_weight) {
-				?>
-                <tr>
-                    <th><?php _e( 'Weight', 'woocommerce-show-attributes' ) ?></th>
-                    <td class="product_weight"><?php echo esc_html( wc_format_weight( $product->get_weight() ) ); ?></td>
-                </tr>
-				<?php
-			}
-
-			if ( $this->show_dimensions && $display_dimensions && $has_dimensions ) {
-				?>
-                <tr>
-                    <th><?php _e( 'Dimensions', 'woocommerce-show-attributes' ) ?></th>
-                    <td class="product_dimensions"><?php echo esc_html( wc_format_dimensions( $product->get_dimensions( false ) ) ); ?></td>
-                </tr>
-				<?php
-			}
-
-			foreach ( $attributes as $attribute ) :
-				$name = $attribute->get_name();
-				?>
-                <tr>
-                    <th><?php echo esc_html( wc_attribute_label( $name ) ); ?></th>
-                    <td><?php
-						$values = $this->formatted_attribute_values($product, $attribute);
-						echo apply_filters( 'woocommerce_attribute', wpautop( wptexturize( implode( ', ', $values ) ) ), $attribute, $values );
-						?></td>
-                </tr>
-			<?php endforeach; ?>
-        </table>
-		<?php
-	}
-
 
 	static function install(): void {
 		$settings = show_attributes_get_all_settings();
